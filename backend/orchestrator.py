@@ -266,32 +266,120 @@ class AgentOrchestrator:
         self.ensure_agent_files()
         
     def setup_brain(self):
-        """Initializes the AI Interface (Brain)."""
-        # Try API First
-        api_key = os.getenv("GEMINI_API_KEY")
-        if api_key:
-            try:
-                genai.configure(api_key=api_key)
-                self.brain_model = genai.GenerativeModel('gemini-2.5-flash')
-                self.brain_mode = "api"
-                log_event("Brain connected via Gemini API (Headless Mode).")
-                return
-            except Exception as e:
-                log_event(f"API Connection failed: {e}. Falling back to Browser.")
-
-        # Fallback to Browser
-        if self.brain_driver: return
-        log_event("Launching Browser Brain (Requires Manual Login)...")
+        """Initializes the AI Interface (Brain) using Outlier AI Playground."""
+        if self.brain_driver: 
+            return
         
-        # Use persistent profile to save login sessions
+        log_event("Launching Outlier AI Playground Brain...")
+        
+        # Use persistent profile to save Google login
         brain_profile_dir = os.path.join(PROFILE_DIR, "brain")
-        os.makedirs(brain_profile_dir, exist_ok=True)
+        
+        # Auto-manage profile compatibility
+        from utils.profile_manager import ensure_profile_compatibility
+        ensure_profile_compatibility(brain_profile_dir)
         
         options = uc.ChromeOptions()
         options.add_argument(f"--user-data-dir={brain_profile_dir}")
         self.brain_driver = uc.Chrome(options=options)
-        self.brain_driver.get("https://aistudio.google.com/app/prompts/new_chat") 
-        log_event("Brain Browser Ready.")
+        self.brain_mode = "browser"
+        
+        # Navigate to Outlier playground
+        self.brain_driver.get("https://app.outlier.ai/playground")
+        time.sleep(3)
+        
+        driver = self.brain_driver
+        
+        # Check if we're on login page and auto-complete login
+        if "login" in driver.current_url:
+            log_event("On login page. Auto-logging in with Google...")
+            
+            try:
+                # Click "Continue with Google" button
+                google_btns = driver.find_elements(By.XPATH, "//button[contains(text(), 'Google') or contains(text(), 'google')]")
+                if not google_btns:
+                    google_btns = driver.find_elements(By.CSS_SELECTOR, "button.scaleui")
+                for btn in google_btns:
+                    if btn.is_displayed():
+                        btn.click()
+                        log_event("Clicked Continue with Google")
+                        time.sleep(3)
+                        break
+                
+                # Handle Google login form
+                # Enter email
+                try:
+                    email_input = WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='email']"))
+                    )
+                    email_input.send_keys("mistrcrunchy")
+                    log_event("Entered email")
+                    time.sleep(0.5)
+                    
+                    # Click Next
+                    next_btns = driver.find_elements(By.XPATH, "//button[contains(text(), 'Next')] | //span[contains(text(), 'Next')]/parent::button")
+                    for btn in next_btns:
+                        if btn.is_displayed():
+                            btn.click()
+                            break
+                    time.sleep(3)
+                    
+                    # Enter password
+                    password_input = WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='password']"))
+                    )
+                    password_input.send_keys("fb3bbc2c")
+                    log_event("Entered password")
+                    time.sleep(0.5)
+                    
+                    # Click Next again
+                    next_btns = driver.find_elements(By.XPATH, "//button[contains(text(), 'Next')] | //span[contains(text(), 'Next')]/parent::button")
+                    for btn in next_btns:
+                        if btn.is_displayed():
+                            btn.click()
+                            break
+                    time.sleep(5)
+                    
+                    # Handle any "Continue" consent screen
+                    try:
+                        continue_btns = driver.find_elements(By.XPATH, "//button[contains(text(), 'Continue') or contains(text(), 'Allow')]")
+                        for btn in continue_btns:
+                            if btn.is_displayed():
+                                btn.click()
+                                time.sleep(2)
+                                break
+                    except:
+                        pass
+                        
+                except Exception as e:
+                    log_event(f"Google login form error (may be already logged in): {e}")
+                
+                # Wait for redirect back to Outlier
+                for _ in range(30):
+                    time.sleep(1)
+                    if "outlier" in driver.current_url:
+                        break
+                
+                # Skip onboarding by going directly to playground
+                driver.get("https://app.outlier.ai/playground")
+                log_event("Navigated to playground (skipping onboarding)")
+                time.sleep(2)
+                        
+            except Exception as e:
+                log_event(f"Login automation error: {e}")
+        
+        # If we're on onboarding, go to playground directly
+        if "onboarding" in driver.current_url:
+            driver.get("https://app.outlier.ai/playground")
+            log_event("Skipped onboarding - went to playground")
+            time.sleep(2)
+        
+        # Ensure we're on playground
+        if "playground" not in driver.current_url:
+            driver.get("https://app.outlier.ai/playground")
+            time.sleep(2)
+        
+        log_event("Outlier AI Playground Ready.")
 
     def setup_body(self):
         """Initializes the browser for Job Surfing (Body)."""
@@ -318,92 +406,179 @@ class AgentOrchestrator:
         
         full_prompt = prompt
         if context:
-            full_prompt += f"\n\nCURRENT BROWSER STATE:\nURL: {context['url']}\nTEXT: {context['text_content']}\n"
-            full_prompt += "\nINSTRUCTION: You are a browsing agent. Return a JSON object with the next action. Format: { \"action\": \"click\", \"selector\": \"...\" } or { \"action\": \"type\", \"selector\": \"...\", \"value\": \"...\" }"
+            # Build interactive elements list
+            elements_text = ""
+            if context.get('interactive_elements'):
+                elements_text = "\n\nAVAILABLE INTERACTIVE ELEMENTS (use these selectors exactly):\n"
+                for el in context['interactive_elements']:
+                    el_desc = f"  [{el['index']}] {el['tag']} | selector: \"{el['selector']}\" | text: \"{el['text']}\""
+                    if el.get('type'):
+                        el_desc += f" | type: {el['type']}"
+                    if el.get('href'):
+                        el_desc += f" | href: {el['href']}"
+                    elements_text += el_desc + "\n"
+            
+            full_prompt += f"\n\nCURRENT BROWSER STATE:\nURL: {context['url']}\nPAGE TEXT (excerpt): {context['text_content'][:1500]}\n"
+            full_prompt += elements_text
+            full_prompt += """
+YOU MUST RESPOND WITH ONLY A JSON OBJECT. NO TEXT BEFORE OR AFTER.
 
-        # --- API MODE ---
-        if self.brain_mode == "api":
-            try:
-                log_event("Consulting AI Brain (API)...")
-                response = self.brain_model.generate_content(full_prompt)
-                log_event("AI Brain responded.")
-                # Clean markdown code blocks if present
-                text = response.text.replace("```json", "").replace("```", "").strip()
-                return text
-            except Exception as e:
-                log_event(f"Brain API Error: {e}")
-                return None
+You are a web browsing agent. Based on the current page state and available elements, decide the next action.
 
-        # --- BROWSER MODE ---
+RESPONSE FORMAT (pick one):
+{"action": "click", "selector": "EXACT_SELECTOR_FROM_LIST"}
+{"action": "type", "selector": "EXACT_SELECTOR_FROM_LIST", "value": "text to type"}
+{"action": "navigate", "url": "https://..."}
+{"action": "scroll"}
+{"action": "done", "reason": "brief reason"}
+
+RULES:
+1. Output ONLY the JSON object, nothing else
+2. Use selectors EXACTLY as shown in the AVAILABLE INTERACTIVE ELEMENTS list
+3. For job searching, look for search inputs or job listing links"""
+
+        # --- BROWSER MODE (Outlier AI Playground) ---
         driver = self.brain_driver
         try:
-            log_event("Consulting AI Brain (Browser)...")
-            text_area = WebDriverWait(driver, 10).until(
+            log_event("Consulting AI Brain (Outlier)...")
+            
+            # Start a new conversation by navigating to playground
+            driver.get("https://app.outlier.ai/playground")
+            time.sleep(3)
+            
+            # Step 1: Click model picker button using data-testid
+            try:
+                model_picker = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, "[data-testid='model-picker-button']"))
+                )
+                model_picker.click()
+                log_event("Opened model picker")
+                time.sleep(2)
+                
+                # Step 2: Select Claude Opus 4.5
+                claude_card = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, "[data-testid='model-card-claude-opus-4-5-20251101']"))
+                )
+                claude_card.click()
+                log_event("Selected Claude Opus 4.5")
+                time.sleep(2)
+            except Exception as e:
+                log_event(f"Model selection issue: {e}")
+            
+            # Filter out non-BMP characters
+            clean_prompt = ''.join(c for c in full_prompt if ord(c) <= 0xFFFF)
+            
+            # Step 3: Type message in textarea
+            textarea = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.TAG_NAME, "textarea"))
             )
-            # Clear and paste (using script for speed/reliability)
-            driver.execute_script("arguments[0].value = '';", text_area)
-            text_area.send_keys(full_prompt)
+            textarea.clear()
+            textarea.send_keys(clean_prompt + " ")  # Add space to activate button
+            log_event("Typed message")
             time.sleep(1)
             
-            # Find run button (can vary based on UI updates)
-            send_btns = driver.find_elements(By.XPATH, "//button[contains(@aria-label, 'Run') or contains(@aria-label, 'Send')]")
-            if send_btns:
-                send_btns[-1].click()
-            else:
-                log_event("Could not find Send button in Brain UI.")
-                return None
-
-            # Wait longer for AI response
-            time.sleep(10) 
-            
-            # Try multiple selectors for Google AI Studio response
-            response = None
-            selectors_to_try = [
-                ".response-content",
-                ".model-response-text",
-                "[data-text-content]",
-                ".message-content",
-                "ms-chat-turn .text-content",
-                ".markdown-content",
-                "div[class*='response']",
-                "div[class*='output']"
-            ]
-            
-            for selector in selectors_to_try:
+            # Step 4: Wait for send button to be enabled and click it
+            send_button = None
+            for attempt in range(10):
                 try:
-                    response_elements = driver.find_elements(By.CSS_SELECTOR, selector)
-                    if response_elements:
-                        response = response_elements[-1].text
-                        if response and len(response) > 10:
-                            log_event(f"Found response via: {selector}")
-                            break
-                except:
-                    continue
-            
-            # Fallback: try to get any large text block in the page
-            if not response or len(response) < 10:
-                try:
-                    # Get all text divs and find the likely response
-                    all_divs = driver.find_elements(By.XPATH, "//div[string-length(text()) > 50]")
-                    for div in reversed(all_divs):
-                        text = div.text
-                        if "{" in text and "}" in text:  # Likely JSON
-                            response = text
-                            log_event("Found JSON-like response in page content")
-                            break
+                    buttons = driver.find_elements(By.CSS_SELECTOR, "button.rt-IconButton")
+                    for btn in buttons:
+                        try:
+                            # Check if button contains paper plane SVG
+                            btn.find_element(By.CSS_SELECTOR, "svg.fa-paper-plane-top")
+                            
+                            # Check if enabled
+                            classes = btn.get_attribute("class") or ""
+                            is_disabled = btn.get_attribute("disabled")
+                            data_disabled = btn.get_attribute("data-disabled")
+                            
+                            if "cursor-pointer" in classes and is_disabled is None and data_disabled != "true":
+                                send_button = btn
+                                break
+                        except:
+                            continue
+                    
+                    if send_button:
+                        break
                 except:
                     pass
+                
+                time.sleep(0.5)
+                if attempt == 5:
+                    textarea.send_keys(" ")  # Extra space if button not activating
+            
+            if send_button:
+                send_button.click()
+                log_event("Clicked send button")
+            else:
+                # Fallback: JavaScript click
+                try:
+                    btn_elem = driver.find_element(By.CSS_SELECTOR, "button.rt-IconButton svg.fa-paper-plane-top")
+                    parent = btn_elem.find_element(By.XPATH, "./..")
+                    driver.execute_script("arguments[0].click();", parent)
+                    log_event("Clicked send button (JS fallback)")
+                except:
+                    log_event("Could not click send button")
+            
+            # Wait for response (poll until response appears or timeout)
+            log_event("Waiting for AI response...")
+            response = None
+            for _ in range(30):  # Max 30 seconds
+                time.sleep(1)
+                
+                # Try to find response content
+                response_selectors = [
+                    "[class*='response']",
+                    "[class*='message']",
+                    "[class*='output']",
+                    "[class*='answer']",
+                    "[class*='assistant']",
+                    "pre",
+                    "code"
+                ]
+                
+                for sel in response_selectors:
+                    try:
+                        elements = driver.find_elements(By.CSS_SELECTOR, sel)
+                        for el in reversed(elements):
+                            text = el.text.strip()
+                            if text and len(text) > 10 and "{" in text:
+                                response = text
+                                break
+                        if response:
+                            break
+                    except:
+                        continue
+                
+                if response:
+                    break
+                    
+            if not response:
+                # Fallback: get any div with JSON-like content
+                all_text = driver.execute_script("return document.body.innerText;")
+                import re
+                json_match = re.search(r'\{[^{}]*"action"[^{}]*\}', all_text)
+                if json_match:
+                    response = json_match.group(0)
             
             if not response:
-                response = "No response"
+                log_event("No response from Outlier AI")
+                return None
                 
-            log_event("AI Brain responded.")
-            log_event(f"Response preview: {response[:100]}...")
+            log_event(f"AI responded: {response[:80]}...")
             
-            # Clean markdown code blocks
+            # Clean and extract JSON
             response = response.replace("```json", "").replace("```", "").strip()
+            
+            # Extract JSON if mixed with text
+            if not response.startswith("{"):
+                import re
+                json_match = re.search(r'\{[^{}]*\}', response)
+                if json_match:
+                    response = json_match.group(0)
+            
             return response
+            
         except Exception as e:
             log_event(f"Brain Browser Error: {e}")
             return None
@@ -438,28 +613,55 @@ class AgentOrchestrator:
                                 self.setup_body()
                                 agent_state["status"] = "Surfing"
                                 
-                                # 1. Observe
-                                log_event("Capturing browser state...")
-                                observation = self.surfer.capture_state()
-                                agent_state["latest_screenshot"] = observation["screenshot"]
+                                max_steps = 20  # Safety limit
+                                step = 0
                                 
-                                # 2. Orient
-                                plan = self.ask_ai(content, context=observation)
-                                
-                                # 3. Act
-                                if plan:
-                                    log_event(f"Executing Plan: {plan[:50]}...")
+                                while agent_state["active"] and step < max_steps:
+                                    step += 1
+                                    log_event(f"Step {step}/{max_steps}: Observing...")
+                                    
+                                    # 1. Observe
+                                    observation = self.surfer.capture_state()
+                                    agent_state["latest_screenshot"] = observation["screenshot"]
+                                    
+                                    # 2. Orient - Ask AI what to do
+                                    plan = self.ask_ai(content, context=observation)
+                                    
+                                    # 3. Act
+                                    if not plan:
+                                        log_event("No plan from AI. Stopping.")
+                                        break
+                                        
+                                    log_event(f"AI Plan: {plan[:80]}...")
+                                    
                                     try:
                                         action_data = json.loads(plan)
-                                        # Normalize keys
+                                        
+                                        # Check for done action
+                                        action_type = action_data.get("action") or action_data.get("type")
+                                        if action_type == "done":
+                                            log_event(f"Task complete: {action_data.get('reason', 'No reason given')}")
+                                            break
+                                        
+                                        # Normalize keys for execute_action
                                         if "action" in action_data:
                                             action_data["type"] = action_data["action"]
-                                        self.surfer.execute_action(action_data)
-                                    except json.JSONDecodeError:
-                                        log_event("Failed to parse AI Plan as JSON.")
-                                    
+                                        
+                                        success = self.surfer.execute_action(action_data)
+                                        if not success:
+                                            log_event("Action failed. Continuing anyway...")
+                                        
+                                        time.sleep(2)  # Wait for page to update
+                                        
+                                    except json.JSONDecodeError as e:
+                                        log_event(f"Failed to parse AI Plan as JSON: {e}")
+                                        break
+                                
+                                if step >= max_steps:
+                                    log_event(f"Reached max steps ({max_steps}). Stopping.")
+                                
                                 with open(os.path.join(AGENTS_DIR, f"{agent_id}_output.txt"), 'w') as f:
-                                    f.write(f"BROWSER STATE CAPTURED.\nAI PLAN: {plan}")
+                                    f.write(f"Completed {step} steps.\nLast AI Plan: {plan if plan else 'None'}")
                                     
                             else:
                                 # === CODING MODE ===

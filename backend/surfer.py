@@ -16,7 +16,10 @@ class JobSurfer:
         
         # Use persistent profile to save login sessions
         surfer_profile_dir = os.path.join(PROFILE_DIR, "surfer")
-        os.makedirs(surfer_profile_dir, exist_ok=True)
+        
+        # Auto-manage profile compatibility
+        from utils.profile_manager import ensure_profile_compatibility
+        ensure_profile_compatibility(surfer_profile_dir)
         
         options = uc.ChromeOptions()
         options.add_argument(f"--user-data-dir={surfer_profile_dir}")
@@ -44,9 +47,52 @@ class JobSurfer:
         screenshot_b64 = self.driver.get_screenshot_as_base64()
         
         # 2. Extract Text/DOM (Reading)
-        # We strip scripts and styles to save tokens
         clean_text = self.driver.execute_script("""
             return document.body.innerText;
+        """)
+        
+        # 3. Extract interactive elements with selectors
+        interactive_elements = self.driver.execute_script("""
+            const elements = [];
+            const allInteractive = document.querySelectorAll('a, button, input, textarea, select, [role="button"], [onclick]');
+            
+            allInteractive.forEach((el, i) => {
+                // Skip hidden elements
+                if (el.offsetParent === null && el.tagName !== 'INPUT') return;
+                
+                const tag = el.tagName.toLowerCase();
+                const id = el.id ? '#' + el.id : null;
+                const name = el.name ? tag + '[name="' + el.name + '"]' : null;
+                const text = (el.innerText || el.value || el.placeholder || el.ariaLabel || '').trim().substring(0, 40);
+                const href = el.href || null;
+                const type = el.type || null;
+                
+                // Build best selector
+                let selector = id || name || null;
+                if (!selector && el.className) {
+                    const classes = el.className.split(' ').filter(c => c && !c.includes(':'));
+                    if (classes.length > 0) {
+                        selector = tag + '.' + classes[0];
+                    }
+                }
+                if (!selector) {
+                    // Use nth-of-type as fallback
+                    const siblings = el.parentElement ? el.parentElement.querySelectorAll(tag) : [];
+                    const index = Array.from(siblings).indexOf(el) + 1;
+                    selector = tag + ':nth-of-type(' + index + ')';
+                }
+                
+                elements.push({ 
+                    index: elements.length + 1,
+                    tag, 
+                    selector, 
+                    text: text || '[no text]',
+                    type,
+                    href: href ? href.substring(0, 60) : null
+                });
+            });
+            
+            return elements.slice(0, 25); // Limit to 25 most relevant
         """)
         
         url = self.driver.current_url
@@ -54,7 +100,8 @@ class JobSurfer:
         return {
             "url": url,
             "screenshot": screenshot_b64,
-            "text_content": clean_text[:5000] # Limit context
+            "text_content": clean_text[:3000], # Reduced to make room for elements
+            "interactive_elements": interactive_elements
         }
 
     def execute_action(self, action):

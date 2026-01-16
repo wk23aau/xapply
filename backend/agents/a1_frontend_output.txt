@@ -1,5 +1,2 @@
-BROWSER STATE CAPTURED.
-AI PLAN: {
-  "action": "click",
-  "selector": "text=\"All Jobs\""
-}
+Completed 1 steps.
+Last AI Plan: None
