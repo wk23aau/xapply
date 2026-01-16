@@ -860,34 +860,58 @@ export default function XapplyApp() {
   const [activeView, setActiveView] = useState<View>("dashboard");
   const [hasOnboarded, setHasOnboarded] = useState<boolean | null>(null);
   const [profileData, setProfileData] = useState<ResumeData | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
 
-  // Check onboarding status on mount
+  // Check auth & onboarding status on mount
   useEffect(() => {
-    const checkOnboarding = async () => {
+    const checkAuth = async () => {
+      const storedToken = localStorage.getItem('xapply_token');
+
+      // If we have a token, validate it
+      if (storedToken) {
+        try {
+          const authRes = await fetch('http://127.0.0.1:5000/auth/me', {
+            headers: { 'Authorization': `Bearer ${storedToken}` }
+          });
+          if (authRes.ok) {
+            setAuthToken(storedToken);
+            // Load profile
+            const profileRes = await fetch('http://127.0.0.1:5000/profile', {
+              headers: { 'Authorization': `Bearer ${storedToken}` }
+            });
+            if (profileRes.ok) setProfileData(await profileRes.json());
+            setHasOnboarded(true);
+            return;
+          }
+        } catch (err) {
+          console.error('Auth check failed', err);
+        }
+      }
+
+      // No valid token - check basic onboarding status
       try {
         const res = await fetch('http://127.0.0.1:5000/onboarding');
         const data = await res.json();
         setHasOnboarded(data.hasOnboarded);
         if (data.hasOnboarded) {
-          // Load profile if already onboarded
           const profileRes = await fetch('http://127.0.0.1:5000/profile');
-          const profile = await profileRes.json();
-          setProfileData(profile);
+          setProfileData(await profileRes.json());
         }
       } catch (err) {
         console.error('Failed to check onboarding status', err);
         setHasOnboarded(false);
       }
     };
-    checkOnboarding();
+    checkAuth();
   }, []);
 
-  const handleOnboardingComplete = (data: ResumeData) => {
+  const handleOnboardingComplete = (data: ResumeData, token: string) => {
     setProfileData(data);
+    setAuthToken(token);
     setHasOnboarded(true);
   };
 
-  // Show loading while checking onboarding
+  // Show loading while checking
   if (hasOnboarded === null) {
     return (
       <div className="h-screen w-full bg-[#0B0E14] flex items-center justify-center">

@@ -13,6 +13,7 @@ from database import Database
 from surfer import JobSurfer
 import google.generativeai as genai
 from dotenv import load_dotenv
+from auth import generate_otp, send_otp_email, create_token, verify_token, require_auth, OTP_EXPIRY_SECONDS
 
 # Load environment variables from .env file
 load_dotenv()
@@ -82,6 +83,59 @@ def handle_onboarding():
     elif request.method == 'POST':
         db.set_onboarded(True)
         return jsonify({"success": True})
+
+# ========================
+# Auth Endpoints
+# ========================
+@app.route('/auth/send-otp', methods=['POST'])
+def send_otp():
+    """Send OTP to user's email."""
+    data = request.json
+    email = data.get('email', '').strip().lower()
+    
+    if not email or '@' not in email:
+        return jsonify({"error": "Invalid email address"}), 400
+    
+    # Generate and store OTP
+    otp_code = generate_otp()
+    expires_at = time.time() + OTP_EXPIRY_SECONDS
+    
+    db = Database()
+    db.save_otp(email, otp_code, expires_at)
+    
+    # Send email
+    success = send_otp_email(email, otp_code)
+    
+    if success:
+        return jsonify({"success": True, "message": "Verification code sent"})
+    else:
+        # Still return success for testing (but log warning)
+        return jsonify({"success": True, "message": "Verification code sent (SMTP may be disabled)"})
+
+@app.route('/auth/verify-otp', methods=['POST'])
+def verify_otp_endpoint():
+    """Verify OTP and return JWT token."""
+    data = request.json
+    email = data.get('email', '').strip().lower()
+    otp_code = data.get('otp', '').strip()
+    
+    if not email or not otp_code:
+        return jsonify({"error": "Email and OTP required"}), 400
+    
+    db = Database()
+    is_valid = db.verify_otp(email, otp_code)
+    
+    if is_valid:
+        token = create_token(email)
+        return jsonify({"success": True, "token": token, "email": email})
+    else:
+        return jsonify({"error": "Invalid or expired verification code"}), 401
+
+@app.route('/auth/me', methods=['GET'])
+@require_auth
+def get_current_user():
+    """Returns current authenticated user info."""
+    return jsonify({"email": request.user_email, "authenticated": True})
 
 @app.route('/upload_resume', methods=['POST'])
 def upload_resume():

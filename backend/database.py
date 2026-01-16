@@ -42,6 +42,18 @@ class Database:
             )
         """)
         
+        # Auth tokens table - stores OTP codes
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS auth_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL,
+                otp_code TEXT NOT NULL,
+                expires_at REAL NOT NULL,
+                used INTEGER DEFAULT 0,
+                created_at REAL
+            )
+        """)
+        
         self.conn.commit()
         
         # Ensure at least one user row exists (default profile)
@@ -140,6 +152,37 @@ class Database:
             (time.time(), job_url)
         )
         self.conn.commit()
+
+    # ========================
+    # Auth Methods
+    # ========================
+    def save_otp(self, email: str, otp_code: str, expires_at: float):
+        """Saves an OTP code for email verification."""
+        cursor = self.conn.cursor()
+        # Invalidate any previous unused OTPs for this email
+        cursor.execute("UPDATE auth_tokens SET used = 1 WHERE email = ? AND used = 0", (email,))
+        # Insert new OTP
+        cursor.execute(
+            "INSERT INTO auth_tokens (email, otp_code, expires_at, created_at) VALUES (?, ?, ?, ?)",
+            (email, otp_code, expires_at, time.time())
+        )
+        self.conn.commit()
+
+    def verify_otp(self, email: str, otp_code: str) -> bool:
+        """Verifies an OTP code. Returns True if valid, False otherwise."""
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """SELECT id FROM auth_tokens 
+               WHERE email = ? AND otp_code = ? AND used = 0 AND expires_at > ?""",
+            (email, otp_code, time.time())
+        )
+        row = cursor.fetchone()
+        if row:
+            # Mark as used
+            cursor.execute("UPDATE auth_tokens SET used = 1 WHERE id = ?", (row["id"],))
+            self.conn.commit()
+            return True
+        return False
 
     def close(self):
         """Closes the database connection."""
