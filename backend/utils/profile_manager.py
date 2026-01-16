@@ -40,16 +40,13 @@ def ensure_profile_compatibility(profile_path):
             print(f"[!] Error reading profile meta: {e}. Cleaning just in case.")
             clean_profile(profile_path)
     else:
-        # No meta file? Might be old profile or new. 
-        # Safest to clean if it exists but has no meta (legacy format or copied), 
-        # BUT we don't want to wipe on first run after update.
-        # Let's check if directory exists.
+        # No meta file? Profile might have user's saved login (Google, etc.)
+        # Just add the meta file instead of cleaning - preserve user sessions
         if os.path.exists(profile_path) and os.listdir(profile_path):
-             # Directory exists but no meta. Assume legacy/foreign.
-             print("[*] No profile metadata found (legacy/copied profile). Cleaning to ensure compatibility...")
-             clean_profile(profile_path)
+             print("[*] No profile metadata found. Adding meta to existing profile (preserving login sessions)...")
+             # Don't clean - just add meta file
     
-    # 3. Create/Update meta execution
+    # 3. Create/Update meta
     if not os.path.exists(profile_path):
         os.makedirs(profile_path, exist_ok=True)
     _write_meta(profile_path)
