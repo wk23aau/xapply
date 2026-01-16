@@ -3,6 +3,9 @@ export interface SkillCategory {
     items: string[];
 }
 
+// Alias for component compatibility
+export type Skill = SkillCategory;
+
 export interface Experience {
     company: string;
     location: string;

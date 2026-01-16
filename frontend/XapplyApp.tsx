@@ -34,6 +34,8 @@ import {
   Upload
 } from "lucide-react";
 import ResumePaper from './components/ResumePaper';
+import OnboardingWizard from './components/OnboardingWizard';
+import ProfileView from './components/ProfileView';
 import { ResumeData } from './types';
 
 // --- Types & Interfaces ---
@@ -856,6 +858,48 @@ const DashboardView = () => (
 
 export default function XapplyApp() {
   const [activeView, setActiveView] = useState<View>("dashboard");
+  const [hasOnboarded, setHasOnboarded] = useState<boolean | null>(null);
+  const [profileData, setProfileData] = useState<ResumeData | null>(null);
+
+  // Check onboarding status on mount
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      try {
+        const res = await fetch('http://127.0.0.1:5000/onboarding');
+        const data = await res.json();
+        setHasOnboarded(data.hasOnboarded);
+        if (data.hasOnboarded) {
+          // Load profile if already onboarded
+          const profileRes = await fetch('http://127.0.0.1:5000/profile');
+          const profile = await profileRes.json();
+          setProfileData(profile);
+        }
+      } catch (err) {
+        console.error('Failed to check onboarding status', err);
+        setHasOnboarded(false);
+      }
+    };
+    checkOnboarding();
+  }, []);
+
+  const handleOnboardingComplete = (data: ResumeData) => {
+    setProfileData(data);
+    setHasOnboarded(true);
+  };
+
+  // Show loading while checking onboarding
+  if (hasOnboarded === null) {
+    return (
+      <div className="h-screen w-full bg-[#0B0E14] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#818cf8]"></div>
+      </div>
+    );
+  }
+
+  // Show onboarding wizard if not onboarded
+  if (!hasOnboarded) {
+    return <OnboardingWizard onComplete={handleOnboardingComplete} />;
+  }
 
   return (
     <div className="flex h-screen w-full bg-[#0B0E14] text-white font-sans overflow-hidden">
@@ -868,6 +912,7 @@ export default function XapplyApp() {
 
         <nav className="flex-1 px-4 py-4 space-y-1">
           <SidebarItem icon={LayoutDashboard} label="Dashboard" isActive={activeView === "dashboard"} onClick={() => setActiveView("dashboard")} />
+          <SidebarItem icon={User} label="My Profile" isActive={activeView === "profile"} onClick={() => setActiveView("profile")} />
           <SidebarItem icon={Terminal} label="Live Agent" isActive={activeView === "live-agent"} onClick={() => setActiveView("live-agent")} />
           <SidebarItem icon={FileEdit} label="SmartCV Tailor" isActive={activeView === "resume-tailor"} onClick={() => setActiveView("resume-tailor")} />
           <SidebarItem icon={Search} label="Job Search" isActive={activeView === "job-search"} onClick={() => setActiveView("job-search")} />
@@ -884,6 +929,7 @@ export default function XapplyApp() {
 
         <main className="flex-1 overflow-hidden relative">
           {activeView === "dashboard" && <DashboardView />}
+          {activeView === "profile" && <ProfileView initialData={profileData || undefined} onSave={setProfileData} />}
           {activeView === "live-agent" && <LiveAgentView />}
           {activeView === "resume-tailor" && <ResumeTailorView />}
           {activeView === "job-search" && <div className="p-6 text-gray-500">Job Search Placeholder</div>}

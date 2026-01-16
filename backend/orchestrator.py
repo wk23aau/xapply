@@ -51,9 +51,8 @@ def get_state():
 def get_jobs():
     db = Database()
     try:
-        with open(db.jobs_file, 'r') as f:
-            data = json.load(f)
-        return jsonify(data)
+        jobs = db.get_jobs()
+        return jsonify({"scouted": [j for j in jobs if j['status'] == 'scouted'], "applied": [j for j in jobs if j['status'] == 'applied']})
     except Exception as e:
         return jsonify({"error": str(e)})
 
@@ -69,12 +68,20 @@ def handle_profile():
     elif request.method == 'POST':
         try:
             new_data = request.json
-            # Save to users.json (full overwrite for now)
-            with open(db.users_file, 'w') as f:
-                json.dump({"profile": new_data}, f, indent=2)
+            db.save_profile(new_data)
             return jsonify({"success": True})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+
+@app.route('/onboarding', methods=['GET', 'POST'])
+def handle_onboarding():
+    """Check or update onboarding status."""
+    db = Database()
+    if request.method == 'GET':
+        return jsonify({"hasOnboarded": db.has_onboarded()})
+    elif request.method == 'POST':
+        db.set_onboarded(True)
+        return jsonify({"success": True})
 
 @app.route('/upload_resume', methods=['POST'])
 def upload_resume():
@@ -152,8 +159,8 @@ def upload_resume():
         
         # Save to DB
         db = Database()
-        with open(db.users_file, 'w') as f:
-            json.dump({"profile": resume_data}, f, indent=2)
+        db.save_profile(resume_data)
+        db.set_onboarded(True)  # Mark onboarding complete after successful upload
             
         # Clean up
         os.remove(temp_path)
