@@ -1,0 +1,5 @@
+BROWSER STATE CAPTURED.
+AI PLAN: {
+  "action": "click",
+  "selector": "text=\"All Jobs\""
+}

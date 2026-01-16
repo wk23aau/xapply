@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xapply Local Dev</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@^19.2.3",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+        "@google/generative-ai": "https://esm.sh/@google/generative-ai@0.14.0"
+      }
+    }
+  </script>
+  <style>
+    /* Screen Styles */
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body,
+    #root {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Print Styles - This is the critical fix */
+    @media print {
+
+      /* Reset everything */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        width: 210mm;
+        height: auto;
+      }
+
+      body {
+        width: 210mm;
+        height: auto;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      @page {
+        size: A4 portrait;
+        margin: 0;
+      }
+
+      /* Hide everything except the resume */
+      body>* {
+        display: none !important;
+      }
+
+      #root {
+        display: block !important;
+      }
+
+      /* Hide nav and left panel */
+      nav,
+      .print\\:hidden {
+        display: none !important;
+      }
+
+      /* Target the resume container specifically */
+      .resume-paper-container {
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 210mm !important;
+        min-height: auto !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 15mm 18mm !important;
+        box-shadow: none !important;
+        background: white !important;
+        font-size: 11pt !important;
+        line-height: 1.4 !important;
+      }
+
+      /* Make all parent containers visible and properly sized */
+      #root,
+      #root>div,
+      #root>div>main,
+      #root>div>main>div {
+        display: block !important;
+        width: 210mm !important;
+        height: auto !important;
+        overflow: visible !important;
+        position: static !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: white !important;
+      }
+
+      /* Ensure sections don't break awkwardly */
+      section {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      /* Remove any transforms */
+      .resume-paper-container,
+      .resume-paper-container * {
+        transform: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-[#0B0E14]">
+  <div id="root"></div>
+  <script type="module" src="./main.tsx"></script>
+</body>
+
+</html>

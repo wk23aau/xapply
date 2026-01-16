@@ -1,0 +1,26 @@
+# Node
+node_modules/
+npm-debug.log
+.env
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor
+.vscode/
+.idea/
+
+# System
+dist/
+build/

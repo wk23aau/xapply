@@ -1,0 +1,162 @@
+{
+  "profile": {
+    "personalInfo": {
+      "name": "WASEEM RAZA KHAN",
+      "title": "Senior QA Engineer | Web & Mobile | Data Integrity Specialist",
+      "address": "London, SW17 0DN",
+      "phone": "+447404132345",
+      "email": "waseemrazakhansqa@gmail.com"
+    },
+    "summary": "Senior Quality Assurance Engineer with 6+ years of technical experience in Software Testing and Development. Specializes in Manual App & Web Testing with a strong \"White Box\" capability using SQL and Python. Possesses a unique \"Product Analysis\" mindset derived from a background in Data Science, ensuring not just UI functionality, but deep Data Integrity and system logic accuracy. Proven track record in Agile environments, leading regression cycles, and creating comprehensive test strategies for high-traffic platforms.",
+    "skills": [
+      {
+        "category": "Core Language",
+        "items": [
+          "Python (Advanced scripting, Automation, PyTest)",
+          "Bash"
+        ]
+      },
+      {
+        "category": "Infrastructure & DevOps",
+        "items": [
+          "Docker (Containerization)",
+          "Kubernetes concepts",
+          "Linux/UNIX administration",
+          "CI/CD (GitHub Actions/Pipelines as Code)"
+        ]
+      },
+      {
+        "category": "AI & Data QA",
+        "items": [
+          "Model Evaluation",
+          "Data Integrity Testing",
+          "Federated Learning concepts",
+          "GPU resource monitoring",
+          "Pandas/NumPy"
+        ]
+      },
+      {
+        "category": "Testing",
+        "items": [
+          "Automated Testing (Backend/API)",
+          "Non-functional Testing (Performance/Scalability)",
+          "Security/Privacy validation"
+        ]
+      },
+      {
+        "category": "Manual Testing",
+        "items": [
+          "Mobile Apps (iOS/Android)",
+          "Web Applications",
+          "Functional",
+          "Regression",
+          "Smoke",
+          "Exploratory"
+        ]
+      },
+      {
+        "category": "Technical QA",
+        "items": [
+          "White Box Testing",
+          "SQL (Complex Queries)",
+          "Python (Scripting/Automation support)",
+          "API Testing"
+        ]
+      },
+      {
+        "category": "Documentation",
+        "items": [
+          "Test Plans",
+          "Test Cases",
+          "Bug Reports",
+          "Release Notes",
+          "RTM (Traceability Matrices)"
+        ]
+      },
+      {
+        "category": "Tools",
+        "items": [
+          "Jira",
+          "Confluence",
+          "Postman",
+          "Android Studio",
+          "Chrome DevTools",
+          "Git"
+        ]
+      }
+    ],
+    "experience": [
+      {
+        "company": "Archopinion",
+        "location": "London, UK",
+        "role": "Senior QA Engineer / Data Validation Lead",
+        "dates": "Jan 2024 - Present | Part-Time",
+        "bullets": [
+          "Ensured the accuracy of high-volume data processing for an AI-driven platform.",
+          "Data Integrity Testing: Validated the accuracy of data extraction pipelines. For a company like CoinMarketCap, this mirrors the critical need to ensure market data is displayed correctly.",
+          "Manual Web Testing: Executed rigorous manual testing of the web interface, ensuring complex reports rendered correctly across different browsers and viewports.",
+          "White Box Testing: Utilized Python scripts and SQL to verify backend logic, checking that data stored in the DB matched the frontend display.",
+          "Test Planning: Created detailed test plans for new feature rollouts, prioritizing test cases based on business impact and risk."
+        ]
+      },
+      {
+        "company": "Al Yamama Company",
+        "location": "NEOM (The LINE), Saudi Arabia",
+        "role": "Senior QA & System Engineer",
+        "dates": "Jan 2023 - Jan 2024 | Full-Time",
+        "bullets": [
+          "Led testing for a mobile-first personnel tracking system.",
+          "Mobile App Testing: Performed comprehensive manual testing on Android/iOS apps used in the field, focusing on GPS accuracy, offline functionality, and battery usage.",
+          "End-to-End Validation: Tested the full data flow from Mobile App -> API -> Database -> Web Dashboard.",
+          "Regression Testing: Managed the regression suite for weekly releases, ensuring new updates did not break core tracking functionality.",
+          "Collaboration: Liaised directly with Product Managers to refine requirements, often identifying logical gaps in the specs before development began (Product Analysis)."
+        ]
+      },
+      {
+        "company": "Amigo Software",
+        "location": "Lahore, Pakistan",
+        "role": "Senior Software QA Engineer",
+        "dates": "Oct 2020 - Dec 2023 | Full-Time",
+        "bullets": [
+          "Core QA role for \"Rainbow Classroom\" (EdTech) and Telephony products.",
+          "App & Web Testing: Conducted functional and non-functional testing for the \"Rainbow\" mobile app and web platform. Verified real-time features like video streaming and chat.",
+          "Test Case Management: Authored and maintained over 500+ test cases, covering happy paths, edge cases, and negative testing scenarios.",
+          "Bug Tracking: Documented defects in Jira with high precision (logs, screenshots, reproduction steps), resulting in a 20% faster turnaround time for developer fixes.",
+          "API Testing: Used Postman to manually validate API endpoints during the \"Back-end First\" testing phase."
+        ]
+      },
+      {
+        "company": "Eyecix Solutions",
+        "location": "Lahore, Pakistan",
+        "role": "Web Developer / QA",
+        "dates": "July 2019 - Oct 2020 | Full-Time",
+        "bullets": [
+          "Full Stack Testing: Performed \"Dev-Testing\" (Unit & Integration) on web projects.",
+          "Mobile Responsiveness: Manually tested websites on various physical mobile devices to ensure UI consistency."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "MSc Data Science & Analytics (Advanced Research)",
+        "institution": "University of Hertfordshire",
+        "location": "Hertfordshire, UK",
+        "dates": "2024 - December 2025",
+        "details": [
+          "Full-Time",
+          "GPA 3.57 current"
+        ]
+      },
+      {
+        "degree": "Bachelor of Science (Computer Science)",
+        "institution": "The Islamia University of Bahawalpur",
+        "location": "Bahawalpur, PK",
+        "dates": "2015-2019",
+        "details": [
+          "Full-Time",
+          "GPA 3.3/4.0"
+        ]
+      }
+    ]
+  }
+}

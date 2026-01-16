@@ -1,0 +1,20 @@
+{
+  "project_name": "xapply",
+  "agents": [
+    {
+      "id": "a1_frontend",
+      "role": "Frontend Architect",
+      "description": "Handles React components, Tailwind styling, and UI logic."
+    },
+    {
+      "id": "a2_backend",
+      "role": "Backend Logic",
+      "description": "Handles Python scripts, data processing, and orchestrator logic."
+    },
+    {
+      "id": "a3_qa",
+      "role": "Quality Assurance",
+      "description": "Reviews code and suggests tests."
+    }
+  ]
+}

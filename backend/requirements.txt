@@ -1,0 +1,11 @@
+selenium>=4.15.0
+undetected-chromedriver>=3.5.0
+watchdog>=3.0.0
+beautifulsoup4>=4.12.0
+colorama>=0.4.6
+requests>=2.31.0
+pillow>=10.0.0
+setuptools
+flask
+flask-cors
+google-generativeai>=0.3.0
