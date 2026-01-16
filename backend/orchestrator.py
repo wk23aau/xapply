@@ -93,8 +93,11 @@ def upload_resume():
     
     try:
         # Save temp file
+        # Save temp file
         db = Database()
-        temp_path = os.path.join(os.path.dirname(db.users_file), f"temp_{file.filename}")
+        data_dir = os.path.join(os.path.dirname(__file__), "data")
+        os.makedirs(data_dir, exist_ok=True)
+        temp_path = os.path.join(data_dir, f"temp_{file.filename}")
         file.save(temp_path)
         
         # Configure Gemini
