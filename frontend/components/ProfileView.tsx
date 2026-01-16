@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { User, Save, Plus, Trash2, Loader2 } from 'lucide-react';
-import { ResumeData, Skill, Experience, Education } from '../types';
+import { User, Save, Plus, Trash2, Loader2, Award, Briefcase, GraduationCap, MapPin } from 'lucide-react';
+import { ResumeData } from '../types';
 
 interface ProfileViewProps {
     initialData?: ResumeData;
@@ -25,15 +25,47 @@ const ProfileView: React.FC<ProfileViewProps> = ({ initialData, onSave }) => {
     }, [initialData]);
 
     // -------------------------
+    // Components
+    // -------------------------
+    const SectionCard: React.FC<{ title: string, icon: React.ReactNode, children: React.ReactNode, action?: React.ReactNode }> = ({ title, icon, children, action }) => (
+        <div className="bg-[#1C1F26]/60 backdrop-blur-md border border-white/5 rounded-3xl p-6 md:p-8 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#818cf8]/10 flex items-center justify-center text-[#818cf8]">
+                        {icon}
+                    </div>
+                    <h3 className="text-xl font-bold text-white tracking-tight">{title}</h3>
+                </div>
+                {action}
+            </div>
+            {children}
+        </div>
+    );
+
+    const InputField = ({ label, className = "", ...props }: any) => (
+        <div className={`space-y-1.5 ${className}`}>
+            {label && <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">{label}</label>}
+            <input
+                className="w-full bg-[#0B0E14] border border-white/5 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#818cf8] focus:border-transparent outline-none transition-all placeholder:text-gray-600 focus:bg-[#15171b]"
+                {...props}
+            />
+        </div>
+    );
+
+    // -------------------------
     // Save Handler
     // -------------------------
     const handleSave = async () => {
         setIsSaving(true);
         setSaveMessage('');
         try {
+            const token = localStorage.getItem('xapply_token');
             const res = await fetch('http://127.0.0.1:5000/profile', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(profile)
             });
             if (!res.ok) throw new Error('Failed to save');
@@ -75,266 +107,272 @@ const ProfileView: React.FC<ProfileViewProps> = ({ initialData, onSave }) => {
     // Render
     // -------------------------
     return (
-        <div className="p-6 h-full overflow-y-auto">
-            <div className="max-w-3xl mx-auto space-y-8">
+        <div className="h-full overflow-y-auto bg-[#0B0E14] custom-scrollbar">
+            <div className="max-w-4xl mx-auto p-6 md:p-10 space-y-8 pb-32">
+
                 {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <User className="text-[#818cf8]" size={28} />
-                        <h2 className="text-2xl font-bold text-white">My Profile</h2>
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sticky top-0 bg-[#0B0E14]/95 backdrop-blur-xl z-10 py-4 -mx-4 px-4 md:px-0 border-b border-white/5 md:border-none md:bg-transparent">
+                    <div>
+                        <h1 className="text-3xl font-extrabold text-white tracking-tight">My Profile</h1>
+                        <p className="text-gray-500">Manage your master profile data.</p>
                     </div>
-                    <button
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className="bg-[#818cf8] hover:bg-[#6366f1] disabled:opacity-50 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
-                    >
-                        {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                        Save Changes
-                    </button>
-                </div>
-                {saveMessage && (
-                    <div className={`text-sm ${saveMessage.includes('Error') ? 'text-red-400' : 'text-green-400'}`}>
-                        {saveMessage}
-                    </div>
-                )}
 
-                {/* Personal Info Card */}
-                <div className="bg-[#151A23] rounded-xl border border-[#1E232F] p-6">
-                    <h3 className="text-lg font-semibold text-white mb-4">Personal Information</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <input
-                            type="text"
-                            placeholder="Full Name"
+                    <div className="flex items-center gap-4">
+                        {saveMessage && (
+                            <span className={`text-sm font-medium px-3 py-1 rounded-full ${saveMessage.includes('Error') ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-400'} animate-in fade-in`}>
+                                {saveMessage}
+                            </span>
+                        )}
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="bg-[#818cf8] hover:bg-[#6366f1] disabled:opacity-50 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-indigo-500/20 active:scale-95 transition-all flex items-center gap-2"
+                        >
+                            {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+
+                {/* Personal Info */}
+                <SectionCard title="Personal Information" icon={<User size={20} />}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <InputField
+                            label="Full Name"
+                            placeholder="Jane Doe"
                             value={profile.personalInfo.name}
-                            onChange={(e) => setProfile(p => ({ ...p, personalInfo: { ...p.personalInfo, name: e.target.value } }))}
-                            className="bg-[#0B0E14] border border-[#1E232F] text-white px-4 py-2 rounded-lg focus:border-[#818cf8] focus:outline-none"
+                            onChange={(e: any) => setProfile(p => ({ ...p, personalInfo: { ...p.personalInfo, name: e.target.value } }))}
                         />
-                        <input
-                            type="text"
-                            placeholder="Professional Title"
+                        <InputField
+                            label="Professional Title"
+                            placeholder="Senior Software Engineer"
                             value={profile.personalInfo.title}
-                            onChange={(e) => setProfile(p => ({ ...p, personalInfo: { ...p.personalInfo, title: e.target.value } }))}
-                            className="bg-[#0B0E14] border border-[#1E232F] text-white px-4 py-2 rounded-lg focus:border-[#818cf8] focus:outline-none"
+                            onChange={(e: any) => setProfile(p => ({ ...p, personalInfo: { ...p.personalInfo, title: e.target.value } }))}
                         />
-                        <input
-                            type="email"
-                            placeholder="Email"
+                        <InputField
+                            label="Email"
                             value={profile.personalInfo.email}
-                            onChange={(e) => setProfile(p => ({ ...p, personalInfo: { ...p.personalInfo, email: e.target.value } }))}
-                            className="bg-[#0B0E14] border border-[#1E232F] text-white px-4 py-2 rounded-lg focus:border-[#818cf8] focus:outline-none"
+                            onChange={(e: any) => setProfile(p => ({ ...p, personalInfo: { ...p.personalInfo, email: e.target.value } }))}
                         />
-                        <input
-                            type="tel"
-                            placeholder="Phone"
+                        <InputField
+                            label="Phone"
+                            placeholder="+1 (555) 000-0000"
                             value={profile.personalInfo.phone}
-                            onChange={(e) => setProfile(p => ({ ...p, personalInfo: { ...p.personalInfo, phone: e.target.value } }))}
-                            className="bg-[#0B0E14] border border-[#1E232F] text-white px-4 py-2 rounded-lg focus:border-[#818cf8] focus:outline-none"
+                            onChange={(e: any) => setProfile(p => ({ ...p, personalInfo: { ...p.personalInfo, phone: e.target.value } }))}
                         />
-                        <input
-                            type="text"
-                            placeholder="Location"
+                        <InputField
+                            label="Location"
+                            placeholder="San Francisco, CA"
+                            className="md:col-span-2"
                             value={profile.personalInfo.address}
-                            onChange={(e) => setProfile(p => ({ ...p, personalInfo: { ...p.personalInfo, address: e.target.value } }))}
-                            className="col-span-2 bg-[#0B0E14] border border-[#1E232F] text-white px-4 py-2 rounded-lg focus:border-[#818cf8] focus:outline-none"
+                            onChange={(e: any) => setProfile(p => ({ ...p, personalInfo: { ...p.personalInfo, address: e.target.value } }))}
                         />
                     </div>
-                </div>
+                </SectionCard>
 
-                {/* Summary Card */}
-                <div className="bg-[#151A23] rounded-xl border border-[#1E232F] p-6">
-                    <h3 className="text-lg font-semibold text-white mb-4">Professional Summary</h3>
+                {/* Summary */}
+                <SectionCard title="Professional Summary" icon={<Award size={20} />}>
                     <textarea
-                        placeholder="Write a brief summary of your professional background..."
+                        placeholder="Detail your professional background, key achievements, and career goals..."
                         value={profile.summary}
                         onChange={(e) => setProfile(p => ({ ...p, summary: e.target.value }))}
-                        rows={4}
-                        className="w-full bg-[#0B0E14] border border-[#1E232F] text-white px-4 py-2 rounded-lg focus:border-[#818cf8] focus:outline-none resize-none"
+                        rows={6}
+                        className="w-full bg-[#0B0E14] border border-white/5 text-white px-5 py-4 rounded-xl focus:ring-2 focus:ring-[#818cf8] focus:border-transparent outline-none transition-all placeholder:text-gray-600 resize-none leading-relaxed focus:bg-[#15171b]"
                     />
-                </div>
+                </SectionCard>
 
-                {/* Skills Card */}
-                <div className="bg-[#151A23] rounded-xl border border-[#1E232F] p-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-white">Skills</h3>
-                        <button onClick={addSkill} className="text-[#818cf8] hover:text-[#6366f1] flex items-center gap-1 text-sm">
-                            <Plus size={14} /> Add Category
+                {/* Skills */}
+                <SectionCard
+                    title="Skills"
+                    icon={<Award size={20} />}
+                    action={
+                        <button onClick={addSkill} className="text-[#818cf8] hover:text-[#6366f1] font-medium flex items-center gap-1.5 transition-colors bg-[#818cf8]/10 px-3 py-1.5 rounded-lg hover:bg-[#818cf8]/20">
+                            <Plus size={16} /> Add Category
                         </button>
-                    </div>
-                    <div className="space-y-3">
-                        {profile.skills.map((skill, idx) => (
-                            <div key={idx} className="flex gap-2">
-                                <input
-                                    type="text"
-                                    placeholder="Category (e.g., Languages)"
-                                    value={skill.category}
-                                    onChange={(e) => {
-                                        const newSkills = [...profile.skills];
-                                        newSkills[idx].category = e.target.value;
-                                        setProfile(p => ({ ...p, skills: newSkills }));
-                                    }}
-                                    className="w-1/3 bg-[#0B0E14] border border-[#1E232F] text-white px-3 py-2 rounded-lg text-sm focus:border-[#818cf8] focus:outline-none"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Skills (comma-separated)"
-                                    value={skill.items.join(', ')}
-                                    onChange={(e) => {
-                                        const newSkills = [...profile.skills];
-                                        newSkills[idx].items = e.target.value.split(',').map(s => s.trim());
-                                        setProfile(p => ({ ...p, skills: newSkills }));
-                                    }}
-                                    className="flex-1 bg-[#0B0E14] border border-[#1E232F] text-white px-3 py-2 rounded-lg text-sm focus:border-[#818cf8] focus:outline-none"
-                                />
-                                <button
-                                    onClick={() => setProfile(p => ({ ...p, skills: p.skills.filter((_, i) => i !== idx) }))}
-                                    className="text-red-400 hover:text-red-300"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Experience Card */}
-                <div className="bg-[#151A23] rounded-xl border border-[#1E232F] p-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-white">Experience</h3>
-                        <button onClick={addExperience} className="text-[#818cf8] hover:text-[#6366f1] flex items-center gap-1 text-sm">
-                            <Plus size={14} /> Add Experience
-                        </button>
-                    </div>
+                    }
+                >
                     <div className="space-y-4">
-                        {profile.experience.map((exp, idx) => (
-                            <div key={idx} className="bg-[#0B0E14] p-4 rounded-lg space-y-3">
-                                <div className="flex justify-between">
+                        {profile.skills.map((skill, idx) => (
+                            <div key={idx} className="flex gap-4 items-start group">
+                                <div className="w-1/3">
                                     <input
                                         type="text"
-                                        placeholder="Company"
-                                        value={exp.company}
+                                        placeholder="Category"
+                                        value={skill.category}
                                         onChange={(e) => {
+                                            const newSkills = [...profile.skills];
+                                            newSkills[idx].category = e.target.value;
+                                            setProfile(p => ({ ...p, skills: newSkills }));
+                                        }}
+                                        className="w-full bg-[#0B0E14] border border-white/5 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#818cf8] outline-none transition-all font-medium"
+                                    />
+                                </div>
+                                <div className="flex-1 relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Skills (comma-separated)"
+                                        value={skill.items.join(', ')}
+                                        onChange={(e) => {
+                                            const newSkills = [...profile.skills];
+                                            newSkills[idx].items = e.target.value.split(',').map(s => s.trim());
+                                            setProfile(p => ({ ...p, skills: newSkills }));
+                                        }}
+                                        className="w-full bg-[#0B0E14] border border-white/5 text-white px-4 py-3 rounded-xl focus:ring-2 focus:ring-[#818cf8] outline-none transition-all"
+                                    />
+                                    <button
+                                        onClick={() => setProfile(p => ({ ...p, skills: p.skills.filter((_, i) => i !== idx) }))}
+                                        className="absolute -right-3 -top-3 bg-[#1C1F26] text-gray-400 hover:text-red-400 p-1.5 rounded-full border border-white/5 opacity-0 group-hover:opacity-100 transition-all shadow-lg"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                        {profile.skills.length === 0 && (
+                            <div className="text-center py-8 text-gray-500 bg-[#0B0E14]/50 rounded-xl border border-dashed border-white/10">
+                                No skills added yet.
+                            </div>
+                        )}
+                    </div>
+                </SectionCard>
+
+                {/* Experience */}
+                <SectionCard
+                    title="Experience"
+                    icon={<Briefcase size={20} />}
+                    action={
+                        <button onClick={addExperience} className="text-[#818cf8] hover:text-[#6366f1] font-medium flex items-center gap-1.5 transition-colors bg-[#818cf8]/10 px-3 py-1.5 rounded-lg hover:bg-[#818cf8]/20">
+                            <Plus size={16} /> Add Position
+                        </button>
+                    }
+                >
+                    <div className="space-y-6">
+                        {profile.experience.map((exp, idx) => (
+                            <div key={idx} className="bg-[#0B0E14]/50 p-6 rounded-2xl border border-white/5 space-y-4 group relative hover:border-white/10 transition-colors">
+                                <button
+                                    onClick={() => setProfile(p => ({ ...p, experience: p.experience.filter((_, i) => i !== idx) }))}
+                                    className="absolute top-4 right-4 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <InputField
+                                        label="Company"
+                                        placeholder="Acme Corp"
+                                        value={exp.company}
+                                        onChange={(e: any) => {
                                             const newExp = [...profile.experience];
                                             newExp[idx].company = e.target.value;
                                             setProfile(p => ({ ...p, experience: newExp }));
                                         }}
-                                        className="bg-transparent border-b border-[#1E232F] text-white px-0 py-1 focus:border-[#818cf8] focus:outline-none"
                                     />
-                                    <button
-                                        onClick={() => setProfile(p => ({ ...p, experience: p.experience.filter((_, i) => i !== idx) }))}
-                                        className="text-red-400 hover:text-red-300"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-3 gap-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Role"
+                                    <InputField
+                                        label="Role"
+                                        placeholder="Product Manager"
                                         value={exp.role}
-                                        onChange={(e) => {
+                                        onChange={(e: any) => {
                                             const newExp = [...profile.experience];
                                             newExp[idx].role = e.target.value;
                                             setProfile(p => ({ ...p, experience: newExp }));
                                         }}
-                                        className="bg-transparent border-b border-[#1E232F] text-gray-300 text-sm px-0 py-1 focus:border-[#818cf8] focus:outline-none"
                                     />
-                                    <input
-                                        type="text"
-                                        placeholder="Location"
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <InputField
+                                        label="Location"
+                                        placeholder="Remote"
                                         value={exp.location}
-                                        onChange={(e) => {
+                                        onChange={(e: any) => {
                                             const newExp = [...profile.experience];
                                             newExp[idx].location = e.target.value;
                                             setProfile(p => ({ ...p, experience: newExp }));
                                         }}
-                                        className="bg-transparent border-b border-[#1E232F] text-gray-300 text-sm px-0 py-1 focus:border-[#818cf8] focus:outline-none"
                                     />
-                                    <input
-                                        type="text"
-                                        placeholder="Dates"
+                                    <InputField
+                                        label="Dates"
+                                        placeholder="Jan 2020 - Present"
                                         value={exp.dates}
-                                        onChange={(e) => {
+                                        onChange={(e: any) => {
                                             const newExp = [...profile.experience];
                                             newExp[idx].dates = e.target.value;
                                             setProfile(p => ({ ...p, experience: newExp }));
                                         }}
-                                        className="bg-transparent border-b border-[#1E232F] text-gray-300 text-sm px-0 py-1 focus:border-[#818cf8] focus:outline-none"
                                     />
                                 </div>
                             </div>
                         ))}
                     </div>
-                </div>
+                </SectionCard>
 
-                {/* Education Card */}
-                <div className="bg-[#151A23] rounded-xl border border-[#1E232F] p-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-white">Education</h3>
-                        <button onClick={addEducation} className="text-[#818cf8] hover:text-[#6366f1] flex items-center gap-1 text-sm">
-                            <Plus size={14} /> Add Education
+                {/* Education */}
+                <SectionCard
+                    title="Education"
+                    icon={<GraduationCap size={20} />}
+                    action={
+                        <button onClick={addEducation} className="text-[#818cf8] hover:text-[#6366f1] font-medium flex items-center gap-1.5 transition-colors bg-[#818cf8]/10 px-3 py-1.5 rounded-lg hover:bg-[#818cf8]/20">
+                            <Plus size={16} /> Add Education
                         </button>
-                    </div>
-                    <div className="space-y-4">
+                    }
+                >
+                    <div className="space-y-6">
                         {profile.education.map((edu, idx) => (
-                            <div key={idx} className="bg-[#0B0E14] p-4 rounded-lg space-y-3">
-                                <div className="flex justify-between">
-                                    <input
-                                        type="text"
-                                        placeholder="Degree"
+                            <div key={idx} className="bg-[#0B0E14]/50 p-6 rounded-2xl border border-white/5 space-y-4 group relative hover:border-white/10 transition-colors">
+                                <button
+                                    onClick={() => setProfile(p => ({ ...p, education: p.education.filter((_, i) => i !== idx) }))}
+                                    className="absolute top-4 right-4 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <InputField
+                                        label="Degree"
+                                        placeholder="BS Computer Science"
                                         value={edu.degree}
-                                        onChange={(e) => {
+                                        onChange={(e: any) => {
                                             const newEdu = [...profile.education];
                                             newEdu[idx].degree = e.target.value;
                                             setProfile(p => ({ ...p, education: newEdu }));
                                         }}
-                                        className="bg-transparent border-b border-[#1E232F] text-white px-0 py-1 focus:border-[#818cf8] focus:outline-none"
                                     />
-                                    <button
-                                        onClick={() => setProfile(p => ({ ...p, education: p.education.filter((_, i) => i !== idx) }))}
-                                        className="text-red-400 hover:text-red-300"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-3 gap-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Institution"
+                                    <InputField
+                                        label="Institution"
+                                        placeholder="University of Technology"
                                         value={edu.institution}
-                                        onChange={(e) => {
+                                        onChange={(e: any) => {
                                             const newEdu = [...profile.education];
                                             newEdu[idx].institution = e.target.value;
                                             setProfile(p => ({ ...p, education: newEdu }));
                                         }}
-                                        className="bg-transparent border-b border-[#1E232F] text-gray-300 text-sm px-0 py-1 focus:border-[#818cf8] focus:outline-none"
                                     />
-                                    <input
-                                        type="text"
-                                        placeholder="Location"
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <InputField
+                                        label="Location"
+                                        placeholder="London, UK"
                                         value={edu.location}
-                                        onChange={(e) => {
+                                        onChange={(e: any) => {
                                             const newEdu = [...profile.education];
                                             newEdu[idx].location = e.target.value;
                                             setProfile(p => ({ ...p, education: newEdu }));
                                         }}
-                                        className="bg-transparent border-b border-[#1E232F] text-gray-300 text-sm px-0 py-1 focus:border-[#818cf8] focus:outline-none"
                                     />
-                                    <input
-                                        type="text"
-                                        placeholder="Dates"
+                                    <InputField
+                                        label="Dates"
+                                        placeholder="2016 - 2020"
                                         value={edu.dates}
-                                        onChange={(e) => {
+                                        onChange={(e: any) => {
                                             const newEdu = [...profile.education];
                                             newEdu[idx].dates = e.target.value;
                                             setProfile(p => ({ ...p, education: newEdu }));
                                         }}
-                                        className="bg-transparent border-b border-[#1E232F] text-gray-300 text-sm px-0 py-1 focus:border-[#818cf8] focus:outline-none"
                                     />
                                 </div>
                             </div>
                         ))}
                     </div>
-                </div>
+                </SectionCard>
             </div>
         </div>
     );

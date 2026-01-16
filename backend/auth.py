@@ -73,10 +73,17 @@ def send_otp_email(to_email: str, otp_code: str) -> bool:
         msg.attach(MIMEText(text, "plain"))
         msg.attach(MIMEText(html, "html"))
         
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()
-            server.login(SMTP_USER, SMTP_PASS)
-            server.sendmail(SMTP_USER, to_email, msg.as_string())
+        if SMTP_PORT == 465:
+            # SSL Connection
+            with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+                server.login(SMTP_USER, SMTP_PASS)
+                server.sendmail(SMTP_USER, to_email, msg.as_string())
+        else:
+            # TLS Connection (587)
+            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+                server.starttls()
+                server.login(SMTP_USER, SMTP_PASS)
+                server.sendmail(SMTP_USER, to_email, msg.as_string())
         
         print(f"[AUTH] OTP sent to {to_email}")
         return True
