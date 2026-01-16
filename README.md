@@ -82,3 +82,13 @@ Open your browser and navigate to the URL shown (usually `http://localhost:5173`
 ## License
 
 [MIT](LICENSE)
+
+## Troubleshooting & Architecture
+
+### Browser Profile Management
+The backend uses persistent Chrome profiles (`backend/data/profiles/`) to save login sessions. 
+- **Auto-Healing**: To prevent hanging issues when switching devices or user accounts, the system automatically checks the profile's signature (`hostname` + `user`). If a mismatch is detected, the profile is safely reset.
+- **Manual Reset**: You can force a profile reset by setting the `FRESH_BROWSER=true` environment variable before running the orchestrator.
+
+### Robust Browser Input
+To handle emojis and special characters (non-BMP characters) that can crash ChromeDriver, the agent uses direct JavaScript injection (`execute_script`) instead of standard keyboard simulation (`send_keys`). This ensures reliable text entry for all AI-generated content.
