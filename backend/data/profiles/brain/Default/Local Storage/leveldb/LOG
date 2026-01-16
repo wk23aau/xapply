@@ -1,5 +1,0 @@
-2026/01/16-11:02:12.047 6168 Creating DB C:\Users\wk23aau\Downloads\xapply\backend\data\profiles\brain\Default\Local Storage\leveldb since it was missing.
-2026/01/16-11:02:12.076 6168 Reusing MANIFEST C:\Users\wk23aau\Downloads\xapply\backend\data\profiles\brain\Default\Local Storage\leveldb/MANIFEST-000001
-2026/01/16-11:02:23.823 17cc Level-0 table #5: started
-2026/01/16-11:02:23.837 17cc Level-0 table #5: 1476736 bytes OK
-2026/01/16-11:02:23.841 17cc Delete type=0 #3

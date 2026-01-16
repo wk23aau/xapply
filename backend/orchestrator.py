@@ -285,7 +285,10 @@ class AgentOrchestrator:
         
         # Use persistent profile to save login sessions
         brain_profile_dir = os.path.join(PROFILE_DIR, "brain")
-        os.makedirs(brain_profile_dir, exist_ok=True)
+
+        # Auto-manage profile compatibility (cleans if system changed or corrupted)
+        from utils.profile_manager import ensure_profile_compatibility
+        ensure_profile_compatibility(brain_profile_dir)
         
         options = uc.ChromeOptions()
         options.add_argument(f"--user-data-dir={brain_profile_dir}")
@@ -341,9 +344,16 @@ class AgentOrchestrator:
             text_area = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.TAG_NAME, "textarea"))
             )
-            # Clear and paste (using script for speed/reliability)
-            driver.execute_script("arguments[0].value = '';", text_area)
-            text_area.send_keys(full_prompt)
+            # Clear and paste (using script for speed/reliability and BMP/emoji support)
+            # send_keys is flaky with emojis and large text
+            driver.execute_script("""
+                arguments[0].value = arguments[1];
+                arguments[0].dispatchEvent(new Event('input', { bubbles: true }));
+                arguments[0].dispatchEvent(new Event('change', { bubbles: true }));
+            """, text_area, full_prompt)
+            
+            # send_keys(" ") ensures any validation logic triggers if the events above didn't catch it
+            text_area.send_keys(" ")
             time.sleep(1)
             
             # Find run button (can vary based on UI updates)

@@ -16,7 +16,10 @@ class JobSurfer:
         
         # Use persistent profile to save login sessions
         surfer_profile_dir = os.path.join(PROFILE_DIR, "surfer")
-        os.makedirs(surfer_profile_dir, exist_ok=True)
+        
+        # Auto-manage profile compatibility
+        from utils.profile_manager import ensure_profile_compatibility
+        ensure_profile_compatibility(surfer_profile_dir)
         
         options = uc.ChromeOptions()
         options.add_argument(f"--user-data-dir={surfer_profile_dir}")

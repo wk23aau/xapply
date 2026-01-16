@@ -24,3 +24,7 @@ htmlcov/
 # System
 dist/
 build/
+
+# App Data
+backend/data/profiles/
+backend/data/temp_*
